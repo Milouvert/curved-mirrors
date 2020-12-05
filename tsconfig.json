@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "outDir": "build",
+        "module": "none",
+        "rootDir": "./sketch/",
+        "watch": true,
+        "outFile": "./build/sketch.js",
+        "removeComments": false
+    }
+}
