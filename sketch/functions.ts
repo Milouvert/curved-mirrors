@@ -20,28 +20,3 @@ function drawArrow(x: number, y: number, angle: number, legLength: number = 10):
     pop()
     pop()
 }
-
-/**
- * Describes linear function of form `ax+b`
- */
-interface linearFunction {
-    a: number,
-    b: number
-}
-
-/**
- * Finds and returns slope (a param) and y-intercept of linear function 
- * @param x1 x component of point 1
- * @param y1 y component of point 1
- * @param x2 x component of point 2
- * @param y2 y component of point 2
- */
-function getLinearFunction(x1: number, y1: number, x2: number, y2: number): linearFunction {
-    // get slope
-    let slope = (y1 - y2) / (x1 - x2)
-
-    // get y-intercept
-    let b = y2 - slope * x2;
-    
-    return {a: slope, b: b}
-}

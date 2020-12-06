@@ -1,4 +1,4 @@
-class Arrow {
+class ArrowObject {
     constructor(xPos, h, inverted, virtual) {
         this.pos = createVector(xPos, height / 2);
         this.height = abs(h);
@@ -33,9 +33,12 @@ class Arrow {
         stroke("red");
         let cast1 = this.castRay1(mirror);
         line(this.pos.x, this.pos.y - this.height, cast1.rays[0].x, cast1.rays[0].y);
+        let arrowAngle = createVector(1, 0).angleBetween(cast1.rays[0].copy().sub(this.pos.x, this.pos.y - this.height));
+        drawArrow(mirror.pos.x + (this.pos.x - mirror.pos.x) / 2, (this.pos.y - this.height + cast1.rays[0].y) / 2, degrees(arrowAngle), 5);
         if (this.pos.x > mirror.pos.x)
             strokeWeight(0.5);
         line(cast1.rays[0].x, cast1.rays[0].y, cast1.rays[1].x, cast1.rays[1].y);
+        drawArrow(mirror.pos.x / 2, cast1.rays[1].y, 180, 5);
         if (cast1.rays.length > 2) {
             push();
             strokeWeight(0.5);
@@ -46,26 +49,24 @@ class Arrow {
         push();
         stroke("green");
         let cast2 = this.castRay2(mirror);
-        if (this.pos.x != mirror.pos.y - mirror.F) {
-            line(this.pos.x, this.pos.y - this.height, cast2.rays[0].x, cast2.rays[0].y);
-            let distFirstArrow = mirror.pos.x - this.pos.x;
-            drawArrow(this.pos.x + distFirstArrow / 2, this.pos.y - this.height, this.pos.x < mirror.pos.x ? 0 : 180, 5);
-            if (this.pos.x > mirror.pos.x)
-                strokeWeight(0.5);
-            line(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[1].x, cast2.rays[1].y);
-            let angle = createVector(-mirror.pos.x, 0).angleBetween(createVector(-mirror.pos.x, cast2.rays[1].y - cast2.rays[0].y));
+        line(this.pos.x, this.pos.y - this.height, cast2.rays[0].x, cast2.rays[0].y);
+        let distFirstArrow = mirror.pos.x - this.pos.x;
+        drawArrow(this.pos.x + distFirstArrow / 2, this.pos.y - this.height, this.pos.x < mirror.pos.x ? 0 : 180, 5);
+        if (this.pos.x > mirror.pos.x)
+            strokeWeight(0.5);
+        line(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[1].x, cast2.rays[1].y);
+        push();
+        arrowAngle = createVector(-mirror.pos.x, 0).angleBetween(createVector(-mirror.pos.x, cast2.rays[1].y - cast2.rays[0].y));
+        translate(cast2.rays[0].x, cast2.rays[0].y);
+        rotate(radians(180) + arrowAngle);
+        translate(dist(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[1].x, cast2.rays[1].y) / 2, 0);
+        drawArrow(0, 0, 0, 5);
+        pop();
+        if (cast2.rays.length > 2) {
             push();
-            translate(cast2.rays[0].x, cast2.rays[0].y);
-            rotate(radians(180) + angle);
-            translate(dist(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[1].x, cast2.rays[1].y) / 2, 0);
-            drawArrow(0, 0, 0, 5);
+            strokeWeight(0.5);
+            line(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[2].x, cast2.rays[2].y);
             pop();
-            if (cast2.rays.length > 2) {
-                push();
-                strokeWeight(0.5);
-                line(cast2.rays[0].x, cast2.rays[0].y, cast2.rays[2].x, cast2.rays[2].y);
-                pop();
-            }
         }
         pop();
         push();
@@ -74,6 +75,10 @@ class Arrow {
         if (this.pos.x > mirror.pos.x)
             strokeWeight(0.5);
         line(this.pos.x, this.pos.y - this.height, cast3.rays[0].x, cast3.rays[0].y);
+        let arrowX = this.pos.x + (cast3.rays[0].x - this.pos.x) / 2;
+        let arrowY = (this.pos.y - this.height + cast3.rays[0].y) / 2;
+        arrowAngle = createVector(1, 0).angleBetween(cast3.rays[0].copy().sub(createVector(this.pos.x, this.pos.y - this.height)));
+        drawArrow(arrowX, arrowY, degrees(arrowAngle), 5);
         if (cast3.rays.length > 1) {
             push();
             strokeWeight(0.5);
@@ -81,13 +86,6 @@ class Arrow {
             pop();
         }
         pop();
-        // get intercept of cast1 and cast2
-        let a = cast1.func.a;
-        let c = cast1.func.b;
-        let b = cast2.func.a;
-        let d = cast2.func.b;
-        let interX = (d - c) / (a - b);
-        let interY = a * ((d - c) / (a - b)) + c;
         // get di
         let distO = mirror.pos.x - this.pos.x;
         let distI = pow((1 / mirror.F - 1 / distO), -1);
@@ -95,17 +93,14 @@ class Arrow {
         let inverted = g < 0;
         let virtual = distI < 0 || this.pos.x > mirror.pos.x;
         let heightI = abs(g) * this.height;
-        return new Arrow(mirror.pos.x - distI, heightI, inverted, virtual);
+        return new ArrowObject(mirror.pos.x - distI, heightI, inverted, virtual);
     }
     castRay1(mirror) {
         let arr = [];
-        let func = getLinearFunction(this.pos.x, this.pos.y - this.height, mirror.pos.x - mirror.F, mirror.pos.y);
-        let slope = func.a;
-        let b = func.b;
+        let func = new LinearFunction(this.pos.x, this.pos.y - this.height, mirror.pos.x - mirror.F, mirror.pos.y);
         // get intersect with mirror x
-        let intX = mirror.pos.x;
-        let intY = slope * (intX) + b;
-        arr.push(createVector(intX, intY));
+        let intY;
+        arr.push(createVector(mirror.pos.x, intY = func.getY(mirror.pos.x)));
         // go back perpendicular to line (slope = 0)
         let perpenX = 0;
         let perpenY = intY;
@@ -115,60 +110,64 @@ class Arrow {
             let virtualY = intY;
             arr.push(createVector(virtualX, virtualY));
         }
-        return { rays: arr, func: { a: 0, b: intY } };
+        return { rays: arr, func: func };
     }
     castRay2(mirror) {
         let arr = [];
         let perpenX = mirror.pos.x;
         let perpenY = this.pos.y - this.height;
         arr.push(createVector(perpenX, perpenY));
-        // go back to f
-        // ax+b
-        // get slope
-        let x1 = perpenX;
-        let y1 = perpenY;
-        let x2 = mirror.pos.x - mirror.F;
-        let y2 = mirror.pos.y;
-        let slope = (y1 - y2) / (x1 - x2);
-        // get b
-        // y2 = slope * x2 + b
-        // y2 - (slope * x2) = b
-        let b = y2 - slope * x2;
-        // get intersect with mirror x
-        let intX = 0;
-        let intY = slope * (intX) + b;
-        arr.push(createVector(intX, intY));
+        // func from (mirror x, arrow height) to (f)
+        let func = new LinearFunction(perpenX, perpenY, mirror.pos.x - mirror.F, mirror.pos.y);
+        // get intersect with mirror x 
+        arr.push(createVector(0, func.getY(0)));
         if (this.pos.x > mirror.pos.x - mirror.F && this.pos.x < mirror.pos.x) {
-            let virtualX = width;
-            let virtualY = slope * (virtualX) + b;
-            arr.push(createVector(virtualX, virtualY));
+            arr.push(createVector(width, func.getY(width)));
         }
-        return { rays: arr, func: { a: slope, b: b } };
+        return { rays: arr, func: func };
     }
     castRay3(mirror) {
         let arr = [];
-        // go to c
-        // ax+b
-        // get slope
-        let x1 = this.pos.x;
-        let y1 = this.pos.y - this.height;
-        let x2 = mirror.pos.x - mirror.C;
-        let y2 = mirror.pos.y;
-        let slope = x1 - x2 != 0 ? (y1 - y2) / (x1 - x2) : 50;
-        // get b
-        // y2 = slope * x2 + b
-        // y2 - (slope * x2) = b
-        let b = y2 - slope * x2;
-        // get intersect with mirror x
-        let intY = height;
-        let intX = (intY - b) / slope;
-        arr.push(createVector(intX, intY));
-        if (this.pos.x > mirror.pos.x - mirror.F && this.pos.x < mirror.pos.x) {
-            let virtualY = 0;
-            let virtualX = (virtualY - b) / slope;
-            arr.push(createVector(virtualX, virtualY));
+        let func = new LinearFunction(this.pos.x, this.pos.y - this.height, mirror.pos.x - mirror.C, mirror.pos.y);
+        // get intersect with wall/floor
+        let y = height;
+        let x = func.getX(y);
+        if (x < 0) {
+            x = 0;
+            y = func.getY(x);
         }
-        return { rays: arr, func: { a: slope, b: b } };
+        else if (x > width) {
+            x = width;
+            y = func.getY(x);
+        }
+        arr.push(createVector(x, y));
+        if (this.pos.x > mirror.pos.x - mirror.F && this.pos.x < mirror.pos.x)
+            arr.push(createVector(func.getX(0), 0));
+        return { rays: arr, func: func };
+    }
+}
+class LinearFunction {
+    /**
+     * Builds a linear function from 2 points
+     * @param x1 x component of point 1
+     * @param y1 y component of point 1
+     * @param x2 x component of point 2
+     * @param y2 y component of point 2
+     */
+    constructor(x1, y1, x2, y2) {
+        this.a = (y1 - y2) / (x1 - x2);
+        this.b = y2 - this.a * x2;
+    }
+    getY(x) {
+        return this.a * x + this.b;
+    }
+    getX(y) {
+        return (y - this.b) / this.a;
+    }
+    intersect(func) {
+        let interX = (func.b - this.b) / (this.a - func.a);
+        let interY = this.a * ((func.b - this.b) / (this.a - func.a)) + this.b;
+        return createVector(interX, interY);
     }
 }
 class Mirror {
@@ -238,25 +237,11 @@ function drawArrow(x, y, angle, legLength = 10) {
     pop();
     pop();
 }
-/**
- * Finds and returns slope (a param) and y-intercept of linear function
- * @param x1 x component of point 1
- * @param y1 y component of point 1
- * @param x2 x component of point 2
- * @param y2 y component of point 2
- */
-function getLinearFunction(x1, y1, x2, y2) {
-    // get slope
-    let slope = (y1 - y2) / (x1 - x2);
-    // get y-intercept
-    let b = y2 - slope * x2;
-    return { a: slope, b: b };
-}
 let arrow, mirror;
 function setup() {
     createCanvas(windowWidth, windowHeight);
     mirror = new Mirror(width / 2, 100);
-    arrow = new Arrow(mirror.pos.x - mirror.C, 50, false, false);
+    arrow = new ArrowObject(mirror.pos.x - mirror.C, 50, false, false);
 }
 function draw() {
     background(220);
@@ -329,5 +314,6 @@ function draw() {
 // resize with window
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
-    mirror.pos.x = width / 2;
+    mirror.pos = createVector(width / 2, height / 2);
+    arrow.pos.y = height / 2;
 }

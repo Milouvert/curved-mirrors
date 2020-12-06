@@ -1,2 +1,2 @@
 # CURVED MIRRORS
-LOL LOL LOL LOL LOL
+uh cool physics concave-convex mirror visualisation:)

@@ -1,9 +1,9 @@
-let arrow: Arrow, mirror: Mirror;
+let arrow: ArrowObject, mirror: Mirror;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   mirror = new Mirror(width / 2, 100)
-  arrow = new Arrow(mirror.pos.x-mirror.C, 50, false, false);
+  arrow = new ArrowObject(mirror.pos.x-mirror.C, 50, false, false);
 }
 
 function draw() {
@@ -95,5 +95,6 @@ function draw() {
 // resize with window
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  mirror.pos.x = width/2
+  mirror.pos = createVector(width/2, height/2)
+  arrow.pos.y = height/2
 }
